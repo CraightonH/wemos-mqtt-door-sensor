@@ -6,7 +6,6 @@ const int SWITCHPIN = D4;
 
 String devID = "esp8266-door-sensor";
 const char* doorTopic = "/garage/door";
-const char* doorPTopic = "/garage/door/p";
 const char* logInfoTopic = "/log/info";
 bool prevDoorClosed = false;
 bool doorClosed = false;
@@ -37,7 +36,7 @@ void findKnownWiFiNetworks() {
 void pubDoorStatePeriodic(bool doorClosed) {
   if (millis() > timer + 5000) {
     timer = millis();
-    pubDoorState(doorPTopic, doorClosed);
+    pubDoorState(doorTopic, doorClosed);
   }
 }
 
@@ -53,6 +52,10 @@ void pubDebug(String message) {
   client.publish("/log/debug", message.c_str());
 }
 
+void sendHassDeviceConfig() {
+  client.publish("homeassistant/sensor/garage/door_sensor/config", "{\"name\": \"Garage Door\", \"state_topic\": \"/garage/door\"}");
+}
+
 void reconnectMQTT() {
   while(!client.connected()) {
     if (client.connect((char*) devID.c_str(), "mqtt", "mymqttpassword")) {
@@ -65,6 +68,7 @@ void reconnectMQTT() {
       } else {
         Serial.println("failed to publish");
       }
+      sendHassDeviceConfig();
     } else {
       Serial.println("MQTT connection failed");
       delay(5000);
